@@ -1,0 +1,10 @@
+---
+title: "visualization"
+subtitle: "part 1"
+output: github_document
+---
+
+```{r setup, we want readr}
+library(tidyverse)
+library(ggridges)
+```
