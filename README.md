@@ -1,1 +1,1 @@
-# visualiza-EDA
+# visualization-EDA
