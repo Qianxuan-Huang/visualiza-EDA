@@ -6,50 +6,33 @@ output: github_document
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(ggridges)
+install.packages("rnoaa")
+library(rnoaa)
 ```
 
 Import the weather data
 
 ```{r}
-weather_df = 
-  rnoaa::meteo_pull_monitors(
-    c("USW00094728", "USW00022534", "USS0023B17S"),
-    var = c("PRCP", "TMIN", "TMAX"), 
-    date_min = "2021-01-01",
-    date_max = "2022-12-31") |>
-  mutate(
-    name = case_match(
-      id, 
-      "USW00094728" ~ "CentralPark_NY", 
-      "USW00022534" ~ "Molokai_HI",
-      "USS0023B17S" ~ "Waterhole_WA"),
-    tmin = tmin / 10,
-    tmax = tmax / 10) |>
-  select(name, id, everything())
+weather_df = read_csv("./data/weather_df.csv")
+weather_df
 ```
 
-Export data -- some folks had trouble accessing.
+Making our first plot : geom_point()用来把点给加上
 
-```{r, eval = FALSE}
-write_csv(weather_df, file = "data/weather_df.csv")
-```
-
-
-Making our first plot :-)
 
 ```{r}
 ggplot(weather_df, aes(x = tmin, y = tmax)) + 
   geom_point()
 ```
 
-
+和上面一样的图：
 ```{r}
 weather_df |> 
   ggplot(aes(x = tmin, y = tmax)) + 
   geom_point()
 ```
 
-
+save a plot object:
 ```{r}
 ggp_weather_scatterplot = 
   weather_df |> 
@@ -60,7 +43,7 @@ ggp_weather_scatterplot
 ```
 
 Check why some rows are missing.
-
+把所有na筛选出来：
 ```{r}
 weather_df |> 
   filter(is.na(tmax))
@@ -68,7 +51,10 @@ weather_df |>
 
 
 ## Fancier scatterplots!
-
+geom_point加点，geom_smooth划线：
+color = name also aply to geom_smooth(),则分组划线；
+alpha = .3是每个点有30%的透明度；
+size = .8是每个点的大小：
 ```{r}
 weather_df |> 
   ggplot(aes(x = tmin, y = tmax, color = name)) + 
@@ -78,7 +64,7 @@ weather_df |>
 
 Where you define aesthetics can matter
 
-
+color only apply to geom_point()，则不分组划线
 ```{r}
 weather_df |> 
   ggplot(aes(x = tmin, y = tmax)) + 
@@ -88,10 +74,13 @@ weather_df |>
 
 use faceting real quick
 
+facet_grid(. ~ name)不同name作为一个column各画一个图，3个竖着的图；
+facet_grid(name ~ .)不同name作为一个row各画一个图，3个横着的图;
+alpha = tmin不同的tmin有不同的透明度：
 ```{r}
 weather_df |> 
-  ggplot(aes(x = tmin, y = tmax, color = name)) + 
-  geom_point(alpha = .3) + 
+  ggplot(aes(x = tmin, y = tmax, alpha = tmin, color = name)) + 
+  geom_point() + 
   geom_smooth(se = FALSE) +
   facet_grid(. ~ name)
 ```
@@ -109,32 +98,26 @@ weather_df |>
 
 LA plot:
 
+how many geoms have to exist?
 ```{r}
 weather_df |> 
-  filter(name == "CentralPark_NY") |> 
-  mutate(
-    tmax_fahr = tmax * (9 / 5) + 32,
-    tmin_fahr = tmin * (9 / 5) + 32
-  ) |> 
-  ggplot(aes(x = tmin_fahr, y = tmax_fahr)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", se = FALSE)
+  ggplot(aes(x = tmin, y = tmax, color = name)) + 
+  geom_smooth(se = FALSE)
+
 ```
 
 
 ## Small things
 
-```{r}
-weather_df |> 
-  ggplot(aes(x = tmin, y = tmax)) + 
-  geom_point(aes(color = name), alpha = .3, size = .8) + 
-  geom_smooth(se = FALSE)
-```
-
+geom_hex()蜂窝状，geom_density2d()等高线：
 ```{r}
 weather_df |> 
   ggplot(aes(x = tmin, y = tmax)) + 
   geom_hex()
+
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax)) + 
+  geom_density2d()
 ```
 
 
@@ -145,13 +128,15 @@ weather_df |>
 ```
 
 ## Univariate plots
+histogram：
 
 ```{r}
 weather_df |> 
-  ggplot(aes(x = tmin)) + 
+  ggplot(aes(x = tmin, color = name)) + 
   geom_histogram()
 ```
-
+position = "dodge" 不同分组并排；
+fill = name没有框：
 ```{r}
 weather_df |> 
   ggplot(aes(x = tmin, fill = name)) + 
@@ -159,7 +144,7 @@ weather_df |>
 ```
 
 how would i fix this? maybe facet?
-
+fill = name加上颜色：
 ```{r}
 weather_df |> 
   ggplot(aes(x = tmin, fill = name)) + 
@@ -168,25 +153,26 @@ weather_df |>
 ```
 
 maybe a density plot?
-
+geom_density()平滑的histogram：
 ```{r}
 weather_df |> 
   ggplot(aes(x = tmin, fill = name)) + 
   geom_density(alpha = .3)
 ```
-
+boxplot：
 ```{r}
 weather_df |> 
   ggplot(aes(x = name, y = tmin, fill = name)) + 
   geom_boxplot()
 ```
 
-violin plots
-
+violin plots平滑的box plot;
+stat_summary(fun = "median") show median point:
 ```{r}
 weather_df |> 
   ggplot(aes(x = name, y = tmin, fill = name)) + 
-  geom_violin()
+  geom_violin() +
+  stat_summary(fun = "median")
 ```
 
 ridge plot
@@ -194,26 +180,9 @@ ridge plot
 ```{r}
 weather_df |> 
   ggplot(aes(x = tmin, y = name)) +
-  geom_density_ridges()
+  geom_density_ridges(alpha = .5) 
 ```
 
-
-LA univariate plots
-
-```{r}
-weather_df |> 
-  ggplot(aes(x = prcp, fill = name)) + 
-  geom_density(alpha = .3)
-
-weather_df |> 
-  ggplot(aes(x = name, y = prcp)) + 
-  geom_boxplot()
-
-weather_df |> 
-  filter(prcp > 10, prcp < 1000) |>  
-  ggplot(aes(x = prcp, fill = name)) + 
-  geom_density(alpha = .3)
-```
 
 
 
