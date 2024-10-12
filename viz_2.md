@@ -246,6 +246,9 @@ ggplot(data = molokai_df, aes(x = date, y = tmax, color = name)) +
 
 ### patchwork
 
+(tmax_tmin_p + prcp_dens_p) /
+tmax_date_p将三个图放在一起，前两个在第一行，/后面的在第二行
+
 ``` r
 tmax_tmin_p = 
   weather_df |> 
@@ -281,3 +284,40 @@ tmax_date_p =
     ## (`geom_point()`).
 
 ![](viz_2_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+### Data Manipulation
+
+为了更改x轴分类的顺序，使得按照特别的名字顺序排列，forcats::fct_relevel（），所以按照”Molokai_HI”,
+“CentralPark_NY”, “Waterhole_WA”的顺序排列：
+
+``` r
+weather_df |>
+  mutate(name = forcats::fct_relevel(name, c("Molokai_HI", "CentralPark_NY", "Waterhole_WA"))) |> 
+  ggplot(aes(x = name, y = tmax)) + 
+  geom_violin(aes(fill = name), color = "blue", alpha = .5) + 
+  theme(legend.position = "bottom")
+```
+
+    ## Warning: Removed 17 rows containing non-finite outside the scale range
+    ## (`stat_ydensity()`).
+
+![](viz_2_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+同时表现tmin和tmax：
+
+``` r
+weather_df |>
+  select(name, tmax, tmin) |> 
+  pivot_longer(
+    tmax:tmin,
+    names_to = "observation", 
+    values_to = "temp") |> 
+  ggplot(aes(x = temp, fill = observation)) +
+  geom_density(alpha = .5) + 
+  facet_grid(~name) + 
+  viridis::scale_fill_viridis(discrete = TRUE)
+```
+
+    ## Warning: Removed 34 rows containing non-finite outside the scale range
+    ## (`stat_density()`).
+
+![](viz_2_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
