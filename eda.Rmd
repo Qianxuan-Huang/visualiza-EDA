@@ -16,7 +16,7 @@ weather_df = weather_df |>
   mutate(
     month = floor_date(date, unit = "month")) |>
   select(name, id, everything())
-````
+```
 
 ## group_by()
 
@@ -122,6 +122,9 @@ weather_df |>
 
 
 easier format for readers to read:
+knitr::kable(
+    digits = 3, 保留3位小数
+    col.names = c("Month", "Central Park", "Molokai", "Waterhole")改名字：
 ```{r}
 weather_df |> 
   group_by(name, month) |> 
@@ -151,7 +154,8 @@ weather_df |>
 ```
 
 Find hottest / coldest days.
-
+min_rank（）从小到大排列；
+ min_rank(desc(））从大到小排列：
 ```{r}
 weather_df |> 
   group_by(name) |> 
@@ -167,7 +171,7 @@ weather_df |>
   arrange(tmax)
 ```
 
-
+lag(tmax, 5)把所有tmax往下移5行：
 ```{r}
 weather_df |> 
   group_by(name) |> 
@@ -193,60 +197,6 @@ weather_df |>
 ```
 
 
-
-
-## PULSE data
-
-```{r}
-pulse_df =
-  read_sas("data/public_pulse_data.sas7bdat") |> 
-  janitor::clean_names() |> 
-  pivot_longer(
-    bdi_score_bl:bdi_score_12m,
-    names_to = "visit",
-    values_to = "bdi_score",
-    names_prefix = "bdi_score_"
-  ) 
-
-pulse_df |> 
-  group_by(visit) |> 
-  summarize(
-    mean_bdi = mean(bdi_score, na.rm = TRUE)
-  ) |> 
-  knitr::kable(digits = 1)
-```
-
-## FAS
-
-```{r}
-litters_df = 
-  read_csv("data/FAS_litters.csv", na = c("NA", ".", "")) |> 
-  janitor::clean_names() |> 
-  separate(
-    group, into = c("dose", "tx_day"), sep = 3
-  )
-
-pups_df = 
-  read_csv("data/FAS_pups.csv", na = c("NA", ".", "")) |> 
-  janitor::clean_names()
-
-fas_df =
-  left_join(pups_df, litters_df, by = "litter_number")
-```
-
-Compute a table that we care about.
-
-```{r}
-fas_df |> 
-  drop_na(dose) |> 
-  group_by(dose, tx_day) |> 
-  summarize(mean_pivot = mean(pd_pivot, na.rm = TRUE)) |> 
-  pivot_wider(
-    names_from = tx_day,
-    values_from = mean_pivot
-  ) |> 
-  knitr::kable(digits = 2)
-```
 
 
 
